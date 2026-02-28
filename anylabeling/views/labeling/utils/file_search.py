@@ -267,9 +267,11 @@ def matches_label_attribute(
 
         if filter_type == "label":
             search_label = filter_value.lower()
+            regex_pattern = to_regex_pattern(search_label)
+
             for shape in shapes:
                 label = shape.get("label", "")
-                if label and label.lower() == search_label:
+                if label and match_text(label.lower(), search_label, regex_pattern):
                     return True
             return False
 
@@ -357,3 +359,44 @@ def filter_image_files(
         filtered_files.append(filename)
 
     return filtered_files
+
+
+def to_regex_pattern(search_text: str) -> Optional[re.Pattern]:
+    """
+    Convert search text to regex pattern.
+
+    Args:
+        search_text: The search text.
+
+    Returns:
+        The regex pattern.
+    """
+    regex_pattern = None
+
+    if (
+        search_text.startswith("<")
+        and search_text.endswith(">")
+        and len(search_text) > 2
+    ):
+        try:
+            regex_pattern = re.compile(search_text[1:-1], re.IGNORECASE)
+        except re.error:
+            pass
+    return regex_pattern
+
+
+def match_text(text: str, search_text: str, regex_pattern: Optional[re.Pattern]) -> bool:
+    """
+    Match label with search pattern.
+
+    Args:
+        text: The text to match.
+        search_text: The search text.
+        regex_pattern: The regex pattern.
+
+    Returns:
+        True if text matches, False otherwise.
+    """
+    if regex_pattern is None:
+        return text == search_text
+    return regex_pattern.search(text)
